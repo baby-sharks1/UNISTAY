@@ -68,7 +68,7 @@ function module_header(string $title, string $role): void
 {
     $nav = $role === 'owner'
         ? ['Dashboard' => '/owner/dashboard.php', 'My Listings' => '/owner/listings.php', 'Inquiries' => '/owner/inquiries.php', 'Tenants' => '/owner/tenants.php', 'Rent Ledger' => '/owner/rent.php', 'My Profile' => '/profile.php']
-        : ['Dashboard' => '/student/dashboard.php', 'Browse' => '/student/listings.php', 'My Inquiries' => '/student/inquiries.php', 'My Tenancy' => '/student/tenancy.php', 'Payments' => '/student/payments.php', 'My Profile' => '/profile.php'];
+        : ['Dashboard' => '/tenant/dashboard.php', 'Browse' => '/tenant/listings.php', 'My Inquiries' => '/tenant/inquiries.php', 'My Tenancy' => '/tenant/tenancy.php', 'Payments' => '/tenant/payments.php', 'My Profile' => '/profile.php'];
     echo '<!doctype html><html lang="en"><head><meta charset="utf-8">';
     echo '<meta name="viewport" content="width=device-width,initial-scale=1">';
     echo '<title>' . module_escape($title) . ' | UniStay</title>';
@@ -92,7 +92,10 @@ function module_header(string $title, string $role): void
 
 function module_footer(): void
 {
-    echo '</main><footer class="footer">UniStay · Shared TiDB development database</footer></body></html>';
+   echo '</main><footer class="footer"><p>
+                &copy; ' . date('Y') . ' UniStay.
+                All Rights Reserved.
+            </p></footer></body></html>';
 }
 
 /** Use the application's local calendar for rent and tenancy dates, regardless of server timezone. */

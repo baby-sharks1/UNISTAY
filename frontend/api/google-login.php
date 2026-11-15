@@ -78,21 +78,17 @@ try {
     $fullName = trim((string) ($claims['name'] ?? '')) ?: 'UniStay User';
 
     $pdo = db();
-    // Database query disabled for commit
-    // $stmt = $pdo->prepare(
+     $stmt = $pdo->prepare(
         'SELECT user_id, full_name, role, status FROM `User` WHERE google_sub = ? LIMIT 1'
     );
-    // Database query disabled for commit
-    // $stmt->execute([$googleSub]);
+     $stmt->execute([$googleSub]);
     $user = $stmt->fetch();
 
     if (!$user) {
         // Do not silently link an existing password account by email alone.
         // Linking can be added later after authenticating that existing account.
-        // Database query disabled for commit
-        // $stmt = $pdo->prepare('SELECT user_id FROM `User` WHERE email = ? LIMIT 1');
-        // Database query disabled for commit
-        // $stmt->execute([$email]);
+         $stmt = $pdo->prepare('SELECT user_id FROM `User` WHERE email = ? LIMIT 1');
+         $stmt->execute([$email]);
         if ($stmt->fetch()) {
             jsonResponse(409, [
                 'error' => 'An account already uses this email. Sign in with your password for now.',
@@ -104,15 +100,12 @@ try {
         $unusablePasswordHash = password_hash(bin2hex(random_bytes(32)), PASSWORD_DEFAULT);
         // Existing User.user_id has no AUTO_INCREMENT and must retain its PK
         // because BoardingListing, Inquiry and Tenancy reference it.
-        // Database query disabled for commit
-        // $newUserId = (int) $pdo->query('SELECT NEXTVAL(unistay_user_id_seq)')->fetchColumn();
-        // Database query disabled for commit
-        // $stmt = $pdo->prepare(
+         $newUserId = (int) $pdo->query('SELECT NEXTVAL(unistay_user_id_seq)')->fetchColumn();
+         $stmt = $pdo->prepare(
             'INSERT INTO `User` (user_id, full_name, email, password_hash, role, status, google_sub) '
             . 'VALUES (?, ?, ?, ?, ?, ?, ?)'
         );
-        // Database query disabled for commit
-        // $stmt->execute([$newUserId, $fullName, $email, $unusablePasswordHash, $requestedRole, 'active', $googleSub]);
+         $stmt->execute([$newUserId, $fullName, $email, $unusablePasswordHash, $requestedRole, 'active', $googleSub]);
         $user = [
             'user_id' => $newUserId,
             'full_name' => $fullName,

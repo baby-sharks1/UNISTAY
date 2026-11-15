@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 require_once __DIR__ . '/../../backend/includes/dashboard_module.php';
+require_once __DIR__ . '/../src/components/portal_theme.php';
 $ownerId = module_require('owner');
 $pdo = db();
 $clock = dashboard_clock();
@@ -56,7 +57,7 @@ try {
 $ownerName = trim((string)($owner['full_name'] ?? '')) ?: 'Owner';
 $noticeCount = dashboard_number($inquiries['pending'] ?? 0) + dashboard_number($inquiries['approved'] ?? 0)
     + ($rentReady ? dashboard_number($rent['overdue'] ?? 0) + dashboard_number($rent['due_soon'] ?? 0) : 0);
-module_header('Owner Dashboard', 'owner');
+unistay_themed_module_header('Owner Dashboard', 'owner');
 ?>
 <section class="ud-hero" aria-label="Welcome">
     <div>

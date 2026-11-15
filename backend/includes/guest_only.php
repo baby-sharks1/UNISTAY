@@ -5,7 +5,7 @@ declare(strict_types=1);
 function unistayDashboardForRole(string $role): ?string
 {
     return match ($role) {
-        'student' => '/student/dashboard.php',
+        'student' => '/tenant/dashboard.php',
         'owner'   => '/owner/dashboard.php',
         'admin'   => '/public/admin/dashboard.php',
         default   => null,

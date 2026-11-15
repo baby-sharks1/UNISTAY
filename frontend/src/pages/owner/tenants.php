@@ -1,5 +1,11 @@
-
 <?php
+// Archived teammate layout template. Real owner routes run from /owner/.
+// Do not expose demonstration data or demo-only POST forms as public functionality.
+if (!defined('UNISTAY_ARCHIVED_OWNER_TEMPLATE')) {
+    http_response_code(404);
+    exit('This page has moved to the Owner dashboard.');
+}
+
 $tenants = [
     [
         'id' => 1,
@@ -90,7 +96,7 @@ foreach ($tenants as $tenant) {
 include __DIR__ . '/../../components/header.php';
 ?>
 
-<link rel="stylesheet" href="/UNISTAY/frontend/src/styles/style.css">
+<link rel="stylesheet" href="/src/styles/style.css">
 
 <main class="owner-tenants-page">
 

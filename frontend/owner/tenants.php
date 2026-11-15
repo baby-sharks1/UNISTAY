@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 require_once __DIR__ . '/../../backend/includes/rent_module.php';
+require_once __DIR__ . '/../src/components/portal_theme.php';
 $ownerId = module_require('owner');
 $pdo = db();
 $path = '/owner/tenants.php';
@@ -10,13 +11,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         if (($_POST['action'] ?? '') !== 'end') throw new InvalidArgumentException('Unknown action.');
         $id = module_positive_int($_POST['tenancy_id'] ?? null, 'tenancy ID');
-        // Database query disabled for commit
-        // $q = $pdo->prepare("UPDATE `Tenancy` t
+         $q = $pdo->prepare("UPDATE `Tenancy` t
             INNER JOIN `BoardingListing` b ON b.listing_id = t.listing_id
             SET t.status = 'ended', t.end_date = CURRENT_DATE()
             WHERE t.tenancy_id = ? AND b.owner_id = ? AND t.status = 'active'");
-        // Database query disabled for commit
-        // $q->execute([$id, $ownerId]);
+         $q->execute([$id, $ownerId]);
         $updated = $q->rowCount() === 1;
         module_flash($updated ? 'Tenancy ended. Its rent and inquiry history remain available.' : 'No active tenancy was changed.', !$updated);
     } catch (InvalidArgumentException $e) {
@@ -27,8 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     module_redirect($path);
 }
 
-// Database query disabled for commit
-// $q = $pdo->prepare("SELECT t.tenancy_id, t.listing_id, t.start_date, t.end_date, t.agreed_rent, t.status,
+ $q = $pdo->prepare("SELECT t.tenancy_id, t.listing_id, t.start_date, t.end_date, t.agreed_rent, t.status,
         b.title AS listing_title, u.full_name, u.email,
         (SELECT COUNT(*) FROM `RentPayment` p WHERE p.tenancy_id = t.tenancy_id) AS bill_count,
         (SELECT COALESCE(SUM(p.amount_due - p.amount_paid), 0.00) FROM `RentPayment` p WHERE p.tenancy_id = t.tenancy_id) AS outstanding
@@ -36,12 +34,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     INNER JOIN `BoardingListing` b ON b.listing_id = t.listing_id
     LEFT JOIN `User` u ON u.user_id = t.student_user_id
     WHERE b.owner_id = ? ORDER BY (t.status = 'active') DESC, t.tenancy_id DESC");
-// Database query disabled for commit
-// $q->execute([$ownerId]);
+ $q->execute([$ownerId]);
 $all = $q->fetchAll();
 $active = array_values(array_filter($all, static fn($t) => $t['status'] === 'active'));
 $past = array_values(array_filter($all, static fn($t) => $t['status'] !== 'active'));
-module_header('Tenancy Management & History', 'owner');
+unistay_themed_module_header('Tenancy Management & History', 'owner');
 ?>
 <p class="muted">Tenancy is created only when the student confirms an approved inquiry. Ending it preserves the student's account, inquiry and rent history. Any outstanding rent remains visible.</p>
 <div class="tenancy-overview"><div><span>Active tenancies</span><strong><?= count($active) ?></strong></div><div><span>Past tenancies</span><strong><?= count($past) ?></strong></div><div><span>Total tenancies</span><strong><?= count($all) ?></strong></div></div>

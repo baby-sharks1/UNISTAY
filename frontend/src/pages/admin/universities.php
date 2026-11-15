@@ -1,35 +1,52 @@
 <?php
-
-$pageTitle = "Manage Universities | UniStay Admin";
-
-require_once __DIR__ . '/../../../../config/db_connect.php';
+declare(strict_types=1);
+require_once __DIR__ . '/../../../../backend/includes/database.php';
 require_once __DIR__ . '/../../../../backend/auth.php';
-
 require_admin();
-
+if (session_status() !== PHP_SESSION_ACTIVE) { session_start(); }
+if (empty($_SESSION['module_csrf'])) { $_SESSION['module_csrf'] = bin2hex(random_bytes(32)); }
+$csrf = (string) $_SESSION['module_csrf'];
 $pdo = db();
-
-// Handle adding a new university to the directory
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_university'])) {
-
-    $name = trim($_POST['name'] ?? '');
-    $city = trim($_POST['city'] ?? '');
-    $address = trim($_POST['address'] ?? '');
-
-    if (!empty($name) && !empty($city) && !empty($address)) {
-        
-        $stmt = $pdo->prepare("INSERT INTO universities (name, city, address) VALUES (?, ?, ?)");
-        $stmt->execute([$name, $city, $address]);
-
+$errorMessage = '';
+function usAdminCsrf(): void {
+    $posted = $_POST['csrf_token'] ?? '';
+    if (!is_string($posted) || !hash_equals((string) $_SESSION['module_csrf'], $posted)) {
+        throw new RuntimeException('The form expired. Refresh and try again.');
     }
-
 }
 
-// Fetch current directory
-$universities = $pdo->query("SELECT * FROM universities ORDER BY name ASC")->fetchAll();
-
+$pageTitle = 'Manage Universities | UniStay Admin';
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_university'])) {
+    try {
+        usAdminCsrf();
+        $name = trim((string) ($_POST['name'] ?? ''));
+        $city = trim((string) ($_POST['city'] ?? ''));
+        if ($name === '' || $city === '' || strlen($name) > 160 || strlen($city) > 120) {
+            throw new InvalidArgumentException('Enter a valid university name and city.');
+        }
+        $exists = $pdo->prepare('SELECT COUNT(*) FROM `University` WHERE name = ?');
+        $exists->execute([$name]);
+        if ((int)$exists->fetchColumn() > 0) {
+            throw new InvalidArgumentException('This university already exists.');
+        }
+        // The current schema uses university_id as an explicit primary key.
+        // If a university sequence exists, use it; otherwise generate an ID for local demo use.
+        try {
+            $id = (int) $pdo->query('SELECT NEXTVAL(unistay_university_seq)')->fetchColumn();
+        } catch (PDOException $e) {
+            $id = (int) $pdo->query('SELECT COALESCE(MAX(university_id),0)+1 FROM `University`')->fetchColumn();
+        }
+        $stmt = $pdo->prepare('INSERT INTO `University` (university_id, name, city) VALUES (?, ?, ?)');
+        $stmt->execute([$id, $name, $city]);
+        header('Location: /public/admin/universities.php?added=1', true, 303);
+        exit;
+    } catch (Throwable $e) {
+        $errorMessage = $e instanceof PDOException ? 'Unable to save the university. Please retry.' : $e->getMessage();
+        error_log('UniStay admin university update: ' . $e->getMessage());
+    }
+}
+$universities = $pdo->query('SELECT university_id, name, city FROM `University` ORDER BY name ASC')->fetchAll(PDO::FETCH_ASSOC);
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -40,9 +57,10 @@ $universities = $pdo->query("SELECT * FROM universities ORDER BY name ASC")->fet
 
     <title><?php echo htmlspecialchars($pageTitle); ?></title>
 
-    <link rel="stylesheet" href="../../src/styles/style.css">
-    <link rel="stylesheet" href="universities.css">
+    <link rel="stylesheet" href="/src/styles/style.css">
+    <link rel="stylesheet" href="/assets/css/universities.css">
 
+    <link rel="stylesheet" href="/src/styles/unistay-theme.css">
 </head>
 
 <body>
@@ -51,6 +69,11 @@ $universities = $pdo->query("SELECT * FROM universities ORDER BY name ASC")->fet
 
 
 <main class="admin-page-layout">
+    <?php if ($errorMessage !== ''): ?>
+      <p class="us-admin-notice us-admin-error" role="alert"><?= htmlspecialchars($errorMessage, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></p>
+    <?php elseif (isset($_GET['updated']) || isset($_GET['added'])): ?>
+      <p class="us-admin-notice us-admin-success" role="status">Changes saved successfully.</p>
+    <?php endif; ?>
 
     <div class="container">
 
@@ -77,6 +100,7 @@ $universities = $pdo->query("SELECT * FROM universities ORDER BY name ASC")->fet
             </div>
 
             <form method="POST" class="admin-form">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
 
                 <div class="form-group">
                     <label for="name">University Name</label>
@@ -86,11 +110,6 @@ $universities = $pdo->query("SELECT * FROM universities ORDER BY name ASC")->fet
                 <div class="form-group">
                     <label for="city">City</label>
                     <input type="text" id="city" name="city" class="form-control" placeholder="e.g. Moratuwa" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="address">Full Address</label>
-                    <input type="text" id="address" name="address" class="form-control" placeholder="e.g. Bandaranayake Mawatha" required>
                 </div>
 
                 <div class="form-group">
@@ -115,7 +134,7 @@ $universities = $pdo->query("SELECT * FROM universities ORDER BY name ASC")->fet
                         <tr>
                             <th>University Name</th>
                             <th>City</th>
-                            <th>Full Address</th>
+                            
                         </tr>
                     </thead>
 
@@ -128,10 +147,6 @@ $universities = $pdo->query("SELECT * FROM universities ORDER BY name ASC")->fet
                                 
                                 <td>
                                     <?php echo htmlspecialchars($uni['city']); ?>
-                                </td>
-                                
-                                <td>
-                                    <?php echo htmlspecialchars($uni['address']); ?>
                                 </td>
                             </tr>
                         <?php endforeach; ?>

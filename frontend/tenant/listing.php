@@ -1,12 +1,12 @@
 <?php
 declare(strict_types=1);
 require_once __DIR__ . '/../../backend/includes/unistay_module.php';
+require_once __DIR__ . '/../src/components/portal_theme.php';
 $studentId = module_require('student');
 $pdo = db();
 $id = filter_var($_GET['id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
 if (!$id) { http_response_code(404); exit('Boarding listing not found.'); }
-// Database query disabled for commit
-// $q = $pdo->prepare('SELECT b.listing_id, b.title, b.address, b.description, b.facilities, b.gender_category,
+ $q = $pdo->prepare('SELECT b.listing_id, b.title, b.address, b.description, b.facilities, b.gender_category,
     b.available_from, b.cover_image_url, b.rent_amount, b.capacity, b.availability,
     u.name AS university_name, u.city AS university_city,
     owner.full_name AS owner_name, owner.phone AS owner_phone, owner.share_phone_with_inquirers,
@@ -15,14 +15,11 @@ if (!$id) { http_response_code(404); exit('Boarding listing not found.'); }
     FROM `BoardingListing` b LEFT JOIN `University` u ON u.university_id = b.university_id
     LEFT JOIN `User` owner ON owner.user_id = b.owner_id
     WHERE b.listing_id = ? LIMIT 1');
-// Database query disabled for commit
-// $q->execute([$studentId, (int)$id]);
+ $q->execute([$studentId, (int)$id]);
 $item = $q->fetch();
 if (!$item) { http_response_code(404); exit('Boarding listing not found.'); }
-// Database query disabled for commit
-// $photosQuery = $pdo->prepare('SELECT file_path FROM `ListingPhoto` WHERE listing_id = ? ORDER BY is_cover DESC, photo_id ASC');
-// Database query disabled for commit
-// $photosQuery->execute([(int)$id]);
+ $photosQuery = $pdo->prepare('SELECT file_path FROM `ListingPhoto` WHERE listing_id = ? ORDER BY is_cover DESC, photo_id ASC');
+ $photosQuery->execute([(int)$id]);
 $photoPaths = array_map(static fn(array $p): string => (string)$p['file_path'], $photosQuery->fetchAll());
 // Keep previous cover URL for listings that haven't uploaded gallery photos.
 if (!$photoPaths && $item['cover_image_url']) $photoPaths[] = (string)$item['cover_image_url'];
@@ -30,9 +27,9 @@ if (!$photoPaths && $item['cover_image_url']) $photoPaths[] = (string)$item['cov
 $remaining = max(0, (int)$item['capacity'] - (int)$item['occupied']);
 $canInquire = $item['availability'] === 'available' && $remaining > 0;
 $facilities = array_values(array_filter(array_map('trim', explode(',', (string)($item['facilities'] ?? '')))));
-module_header('Boarding Details', 'student');
+unistay_themed_module_header('Boarding Details', 'student');
 ?>
-<a class="back-link" href="/student/listings.php">← Back to search results</a>
+<a class="back-link" href="/tenant/listings.php">← Back to search results</a>
 <article class="panel listing-details">
     <?php if ($photoPaths): ?>
       <img id="photo-hero" class="listing-hero" src="<?= module_escape($photoPaths[0]) ?>" alt="Photo of this boarding place" referrerpolicy="no-referrer">
@@ -73,9 +70,9 @@ module_header('Boarding Details', 'student');
         <?php endif; ?>
       </section>
       <div class="actions" style="margin-top:22px">
-          <?php if ($canInquire): ?><a class="btn" href="/student/inquiries.php?listing_id=<?= (int)$item['listing_id'] ?>">Send an inquiry</a>
+          <?php if ($canInquire): ?><a class="btn" href="/tenant/inquiries.php?listing_id=<?= (int)$item['listing_id'] ?>">Send an inquiry</a>
           <?php else: ?><span class="tag">Not accepting inquiries right now</span><?php endif; ?>
-          <a class="btn secondary" href="/student/listings.php">Browse other places</a>
+          <a class="btn secondary" href="/tenant/listings.php">Browse other places</a>
       </div>
     </div>
 </article>

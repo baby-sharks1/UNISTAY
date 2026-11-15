@@ -1,5 +1,5 @@
-
 <?php
+if (session_status() !== PHP_SESSION_ACTIVE) { session_start(); }
 $pageTitle = "UniStay - Find Your Perfect Boarding Place";
 ?>
 
@@ -15,6 +15,7 @@ $pageTitle = "UniStay - Find Your Perfect Boarding Place";
     <title><?php echo htmlspecialchars($pageTitle); ?></title>
 
     <link rel="stylesheet" href="/src/styles/style.css">
+    <link rel="stylesheet" href="/src/styles/unistay-theme.css">
 </head>
 
 <body>
@@ -90,7 +91,7 @@ $pageTitle = "UniStay - Find Your Perfect Boarding Place";
 
         <div class="search-panel">
 
-            <form action="listings.php"
+            <form action="/public/listings.php"
                   method="GET"
                   class="search-form">
 
@@ -100,14 +101,7 @@ $pageTitle = "UniStay - Find Your Perfect Boarding Place";
                         Select University
                     </label>
 
-                    <select
-                        name="university"
-                        id="university"
-                        class="form-control"
-                        disabled
-                    >
-                        <option value="">Universities will appear here</option>
-                    </select>
+                    <?php require __DIR__ . '/../components/public_university_select.php'; ?>
 
                 </div>
 
@@ -180,38 +174,8 @@ $pageTitle = "UniStay - Find Your Perfect Boarding Place";
 
 </section>
 
-<!-- FEATURED LISTINGS -->
-
-<section class="section section-light">
-
-    <div class="container">
-
-        <div class="section-heading">
-
-            <h2>EXPLORE BOARDING PLACES</h2>
-
-            <p>
-                Find accommodation options that suit your
-                university life.
-            </p>
-
-        </div>
-
-        <div class="section-heading">
-
-            <h3>No Boarding Places Available Yet</h3>
-
-            <p>
-                Boarding listings will appear here once
-                owners start adding their properties.
-            </p>
-
-        </div>
-
-    </div>
-
-</section>
-
+<!-- FEATURED LISTINGS: actual owner-created properties from TiDB -->
+<?php require __DIR__ . '/../components/features_boardings.php'; ?>
 
 <!--ABOUT UNISTAY-->
 

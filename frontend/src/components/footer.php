@@ -27,25 +27,25 @@
 
                 <ul>
                     <li>
-                        <a href="<?php echo $baseUrl; ?>index.php">
+                        <a href="/public/index.php">
                             Home
                         </a>
                     </li>
 
                     <li>
-                        <a href="<?php echo $baseUrl; ?>listings.php">
+                        <a href="/public/listings.php">
                             Find Boarding
                         </a>
                     </li>
 
                     <li>
-                        <a href="<?php echo $baseUrl; ?>index.php#about">
+                        <a href="/public/index.php#about">
                             About Us
                         </a>
                     </li>
 
                     <li>
-                        <a href="<?php echo $baseUrl; ?>login.php">
+                        <a href="/public/login.php">
                             Login
                         </a>
                     </li>
@@ -71,7 +71,7 @@
         <div class="footer-bottom">
 
             <p>
-                &copy; <?php echo date("Y"); ?> UniStay.
+                &copy; <?= date('Y') ?> UniStay.
                 All Rights Reserved.
             </p>
 
@@ -81,13 +81,5 @@
 
 </footer>
 
-<?php
-$scriptPath = $isOwnerPage
-    ? '../../src/assets/main.js'
-    : '../src/assets/main.js';
-?>
-
-<script src="<?php echo $scriptPath; ?>"></script>
-
-</body>
-</html>
+<!-- Global JavaScript -->
+<script src="/src/assets/main.js" defer></script>

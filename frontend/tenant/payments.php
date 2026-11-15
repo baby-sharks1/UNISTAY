@@ -1,25 +1,24 @@
 <?php
 declare(strict_types=1);
 require_once __DIR__ . '/../../backend/includes/rent_module.php';
+require_once __DIR__ . '/../src/components/portal_theme.php';
 $studentId = module_require('student');
 $pdo = db();
-// Database query disabled for commit
-// $q = $pdo->prepare('SELECT p.payment_id, p.billing_month, p.amount_due, p.amount_paid,
+ $q = $pdo->prepare('SELECT p.payment_id, p.billing_month, p.amount_due, p.amount_paid,
     p.due_date, p.paid_at, p.payment_method, p.status, p.reference_note,
     t.tenancy_id, t.status AS tenancy_status, b.title AS listing_title
     FROM `RentPayment` p
     JOIN `Tenancy` t ON t.tenancy_id = p.tenancy_id
     JOIN `BoardingListing` b ON b.listing_id = t.listing_id
     WHERE t.student_user_id = ? ORDER BY p.billing_month DESC, p.payment_id DESC');
-// Database query disabled for commit
-// $q->execute([$studentId]);
+ $q->execute([$studentId]);
 $payments = $q->fetchAll();
 $remaining = 0; $overdue = 0;
 foreach ($payments as $p) {
     $remaining += rent_parse_cents($p['amount_due']) - rent_parse_cents($p['amount_paid']);
     if ($p['status'] !== 'paid' && $p['due_date'] < date('Y-m-d')) $overdue++;
 }
-module_header('My Rent & Payments', 'student');
+unistay_themed_module_header('My Rent & Payments', 'student');
 ?>
 <p class="muted">Your monthly rent history is private. Payments shown here are recorded manually by your boarding owner, not independently verified by UniStay.</p>
 <div class="rent-stats">

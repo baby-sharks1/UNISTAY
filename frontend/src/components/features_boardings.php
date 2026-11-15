@@ -20,7 +20,7 @@ try {
         <?php elseif (!$usListings): ?>
             <p class="us-listing-message">No boarding places are available yet. Check back soon.</p>
         <?php else: ?>
-            <?php require __DIR__ . '/public_listing_cards.php'; ?>
+            <?php require __DIR__ . '/public_listing_Cards.php'; ?>
         <?php endif; ?>
         <div class="us-more-wrap"><a href="/public/listings.php" class="btn btn-primary">Browse All Boarding Places</a></div>
     </div>

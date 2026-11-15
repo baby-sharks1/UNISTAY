@@ -1,6 +1,6 @@
 <?php
 // Frontend template: /public/inquiry.php?listing_id=123
-// The existing /student/inquiries.php handler performs every database write.
+// The existing /tenant/inquiries.php handler performs every database write.
 declare(strict_types=1);
 
 if (!defined('UNISTAY_INQUIRY_ENTRY')) {
@@ -58,8 +58,7 @@ if ($listingId === false || $listingId === null) {
 } else {
     try {
         $pdo = db();
-        // Database query disabled for commit
-        // $query = $pdo->prepare(<<<'SQL'
+         $query = $pdo->prepare(<<<'SQL'
             SELECT b.listing_id, b.title, b.address, b.rent_amount,
                    b.capacity, b.availability, b.cover_image_url,
                    u.name AS university_name, owner.full_name AS owner_name,
@@ -73,8 +72,7 @@ if ($listingId === false || $listingId === null) {
             LEFT JOIN `User` owner ON owner.user_id = b.owner_id
             WHERE b.listing_id = ? LIMIT 1
             SQL);
-        // Database query disabled for commit
-        // $query->execute([(int) $listingId]);
+        $query->execute([(int) $listingId]);
         $boardingPlace = $query->fetch(PDO::FETCH_ASSOC) ?: null;
         if (!$boardingPlace) {
             http_response_code(404);
@@ -97,23 +95,19 @@ if ($listingId === false || $listingId === null) {
             }
 
             if ($userId && $role === 'student') {
-                // Database query disabled for commit
-                // $studentQuery = $pdo->prepare(
+                 $studentQuery = $pdo->prepare(
                     'SELECT full_name, email, phone FROM `User` WHERE user_id = ? AND role = ? LIMIT 1'
                 );
-                // Database query disabled for commit
-                // $studentQuery->execute([(int) $userId, 'student']);
+                $studentQuery->execute([(int) $userId, 'student']);
                 $student = $studentQuery->fetch(PDO::FETCH_ASSOC) ?: null;
                 if (!$student) {
                     $errorMessage = 'Your student account could not be verified. Please log in again.';
                 } else {
-                    // Database query disabled for commit
-                    // $duplicate = $pdo->prepare(
+                     $duplicate = $pdo->prepare(
                         "SELECT COUNT(*) FROM `Inquiry` WHERE listing_id = ? AND student_user_id = ?\n"
                         . "AND status IN ('pending', 'approved', 'confirmed')"
                     );
-                    // Database query disabled for commit
-                    // $duplicate->execute([(int) $listingId, (int) $userId]);
+                    $duplicate->execute([(int) $listingId, (int) $userId]);
                     $existingInquiry = (int) $duplicate->fetchColumn() > 0;
                 }
             }
@@ -146,6 +140,7 @@ $statusClass = $status === 'available' && $remaining === 0 ? 'unavailable' : $st
         .unistay-inquiry-info { margin: 0 0 16px; line-height: 1.7; }
         .unistay-inquiry-info strong { overflow-wrap:anywhere; }
     </style>
+    <link rel="stylesheet" href="/src/styles/unistay-theme.css">
 </head>
 <body>
 <?php include __DIR__ . '/../components/header.php'; ?>
@@ -207,7 +202,7 @@ $statusClass = $status === 'available' && $remaining === 0 ? 'unavailable' : $st
                         <?php endif; ?>
                     <?php elseif ($existingInquiry): ?>
                         <div class="inquiry-message inquiry-success">You already have a pending or active inquiry for this listing.</div>
-                        <a href="/student/inquiries.php" class="btn btn-primary">View My Inquiries</a>
+                        <a href="/tenant/inquiries.php" class="btn btn-primary">View My Inquiries</a>
                     <?php elseif ($student): ?>
                         <p class="inquiry-description">
                             Your account details will identify you to the owner. Only your message is saved in the Inquiry record.
@@ -220,7 +215,7 @@ $statusClass = $status === 'available' && $remaining === 0 ? 'unavailable' : $st
                             <?php endif; ?>
                         </div>
                         <!-- Reuse the EXISTING student inquiry creation handler and CSRF validation. -->
-                        <form action="/student/inquiries.php" method="POST" class="inquiry-form">
+                        <form action="/tenant/inquiries.php" method="POST" class="inquiry-form">
                             <input type="hidden" name="csrf_token" value="<?= publicInquiryEscape(module_csrf_token()) ?>">
                             <input type="hidden" name="action" value="create">
                             <input type="hidden" name="listing_id" value="<?= (int) $listingId ?>">

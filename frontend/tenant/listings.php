@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
 require_once __DIR__ . '/../../backend/includes/unistay_module.php';
+require_once __DIR__ . '/../src/components/portal_theme.php';
 $studentId = module_require('student');
 $pdo = db();
 
-// Database query disabled for commit
-// $universities = $pdo->query('SELECT university_id, name, city FROM `University` ORDER BY name, city')->fetchAll();
+ $universities = $pdo->query('SELECT university_id, name, city FROM `University` ORDER BY name, city')->fetchAll();
 $universityId = filter_var($_GET['university_id'] ?? null, FILTER_VALIDATE_INT);
 $gender = (string)($_GET['gender'] ?? 'all');
 $availability = (string)($_GET['availability'] ?? 'available');
@@ -27,17 +27,15 @@ if ($gender !== 'all') { $sql .= " AND b.gender_category IN ('any', ?)"; $bindin
 if ($availability !== 'all') { $sql .= ' AND b.availability = ?'; $bindings[] = $availability; }
 if ($maxRent !== '') { $sql .= ' AND b.rent_amount <= ?'; $bindings[] = $maxRent; }
 $sql .= ' ORDER BY b.listing_id DESC LIMIT 100';
-// Database query disabled for commit
-// $q = $pdo->prepare($sql);
-// Database query disabled for commit
-// $q->execute($bindings);
+ $q = $pdo->prepare($sql);
+ $q->execute($bindings);
 $listings = $q->fetchAll();
 
-module_header('Find a Boarding Place', 'student');
+unistay_themed_module_header('Find a Boarding Place', 'student');
 ?>
 <p class="muted">Compare boarding places near your university, then contact the owner through UniStay. Only your own student account can submit inquiries.</p>
 <section class="panel">
-  <form method="get" action="/student/listings.php" class="listing-filter">
+  <form method="get" action="/tenant/listings.php" class="listing-filter">
     <div><label for="university_id">University</label><select id="university_id" name="university_id"><option value="">All universities</option>
       <?php foreach ($universities as $u): ?><option value="<?= (int)$u['university_id'] ?>" <?= $universityId && (int)$u['university_id'] === (int)$universityId ? 'selected' : '' ?>><?= module_escape((string)($u['name'] ?: ('University #' . $u['university_id']))) ?><?= $u['city'] ? ' · ' . module_escape((string)$u['city']) : '' ?></option><?php endforeach; ?>
     </select></div>
@@ -48,7 +46,7 @@ module_header('Find a Boarding Place', 'student');
     <div><label for="availability">Availability</label><select id="availability" name="availability">
       <?php foreach (['available' => 'Available now', 'soon' => 'Available soon', 'all' => 'Show all'] as $value => $label): ?><option value="<?= $value ?>" <?= $availability === $value ? 'selected' : '' ?>><?= $label ?></option><?php endforeach; ?>
     </select></div>
-    <div class="filter-actions"><button type="submit">Search places</button><a href="/student/listings.php" class="btn secondary">Clear</a></div>
+    <div class="filter-actions"><button type="submit">Search places</button><a href="/tenant/listings.php" class="btn secondary">Clear</a></div>
   </form>
 </section>
 <section class="cards listing-cards">
@@ -71,8 +69,8 @@ module_header('Find a Boarding Place', 'student');
       <p class="muted small"><?= $remaining ?> of <?= $capacity ?> places left · <?= module_escape((string)($row['gender_category'] === 'any' ? 'All students' : ucfirst((string)$row['gender_category']) . ' students')) ?></p>
       <?php if ($row['availability'] === 'soon' && $row['available_from']): ?><p class="muted small">Expected: <?= module_escape((string)$row['available_from']) ?></p><?php endif; ?>
       <p class="muted small"><?= module_escape((string)($row['description'] ? (function_exists('mb_substr') ? mb_substr((string)$row['description'], 0, 140) : substr((string)$row['description'], 0, 140)) : 'View details about this boarding place.')) ?></p>
-      <div class="actions"><a class="btn secondary" href="/student/listing.php?id=<?= (int)$row['listing_id'] ?>">View details</a>
-        <?php if ($canInquire): ?><a class="btn" href="/student/inquiries.php?listing_id=<?= (int)$row['listing_id'] ?>">Send inquiry</a><?php else: ?><span class="tag">Not taking inquiries</span><?php endif; ?>
+      <div class="actions"><a class="btn secondary" href="/tenant/listing.php?id=<?= (int)$row['listing_id'] ?>">View details</a>
+        <?php if ($canInquire): ?><a class="btn" href="/tenant/inquiries.php?listing_id=<?= (int)$row['listing_id'] ?>">Send inquiry</a><?php else: ?><span class="tag">Not taking inquiries</span><?php endif; ?>
       </div>
     </div>
   </article>

@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 require_once __DIR__ . '/../backend/includes/profile_module.php';
+require_once __DIR__ . '/src/components/portal_theme.php';
 [$role, $userId] = profile_role_and_id();
 $pdo = db();
 $path = '/profile.php';
@@ -15,10 +16,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             throw new InvalidArgumentException('Add a contact phone number before enabling sharing.');
         }
         // Only this signed-in user's editable fields may change.
-        // Database query disabled for commit
-        // $q = $pdo->prepare('UPDATE `User` SET full_name = ?, phone = ?, share_phone_with_inquirers = ? WHERE user_id = ? AND role = ?');
-        // Database query disabled for commit
-        // $q->execute([$name, $phone, $share, $userId, $role]);
+        $q = $pdo->prepare('UPDATE `User` SET full_name = ?, phone = ?, share_phone_with_inquirers = ? WHERE user_id = ? AND role = ?');
+        $q->execute([$name, $phone, $share, $userId, $role]);
         module_flash('Profile updated successfully.');
     } catch (InvalidArgumentException $e) {
         module_flash($e->getMessage(), true);
@@ -28,13 +27,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     module_redirect($path);
 }
 
-// Database query disabled for commit
-// $q = $pdo->prepare('SELECT user_id, full_name, email, phone, role, share_phone_with_inquirers FROM `User` WHERE user_id = ? AND role = ? LIMIT 1');
-// Database query disabled for commit
-// $q->execute([$userId, $role]);
+$q = $pdo->prepare('SELECT user_id, full_name, email, phone, role, share_phone_with_inquirers FROM `User` WHERE user_id = ? AND role = ? LIMIT 1');
+$q->execute([$userId, $role]);
 $profile = $q->fetch(PDO::FETCH_ASSOC);
 if (!$profile) { http_response_code(404); exit('Account not found.'); }
-module_header('My Profile', $role);
+unistay_themed_module_header('My Profile', $role);
 ?>
 <div class="profile-layout">
     <section class="panel profile-panel">
@@ -56,7 +53,7 @@ module_header('My Profile', $role);
         <?php else: ?>
           <p class="muted small">Your student account remains yours, even when you become a tenant. Property owners cannot edit it.</p>
         <?php endif; ?>
-        <div class="actions"><button type="submit">Save profile</button><a class="btn secondary" href="<?= $role === 'owner' ? '/owner/dashboard.php' : '/student/dashboard.php' ?>">Back to dashboard</a></div>
+        <div class="actions"><button type="submit">Save profile</button><a class="btn secondary" href="<?= $role === 'owner' ? '/owner/dashboard.php' : '/tenant/dashboard.php' ?>">Back to dashboard</a></div>
       </form>
     </section>
     <aside class="panel profile-aside"><h2>Privacy &amp; access</h2><p>Only you can update your name and phone using this page. Your account email, Google identity, and account role cannot be edited here.</p><p><?= $role === 'owner' ? 'Student contact sharing is optional. Your phone is revealed only to authenticated students with eligible inquiries for your properties.' : 'An owner approves accommodation inquiries, but never creates or controls your student account.' ?></p></aside>

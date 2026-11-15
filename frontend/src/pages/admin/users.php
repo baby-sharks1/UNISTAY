@@ -1,40 +1,44 @@
 <?php
-
-$pageTitle = "Manage Users | UniStay Admin";
-
-require_once __DIR__ . '/../../../../config/db_connect.php';
+declare(strict_types=1);
+require_once __DIR__ . '/../../../../backend/includes/database.php';
 require_once __DIR__ . '/../../../../backend/auth.php';
-
 require_admin();
-
+if (session_status() !== PHP_SESSION_ACTIVE) { session_start(); }
+if (empty($_SESSION['module_csrf'])) { $_SESSION['module_csrf'] = bin2hex(random_bytes(32)); }
+$csrf = (string) $_SESSION['module_csrf'];
 $pdo = db();
-
-// Handle status updates for user accounts
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
-
-    $status = $_POST['status'] ?? '';
-    $userId = $_POST['user_id'] ?? '';
-
-    if (!empty($userId) && in_array($status, ['active', 'suspended'])) {
-        
-        $stmt = $pdo->prepare("UPDATE users SET status = ? WHERE user_id = ?");
-        $stmt->execute([$status, $userId]);
-
+$errorMessage = '';
+function usAdminCsrf(): void {
+    $posted = $_POST['csrf_token'] ?? '';
+    if (!is_string($posted) || !hash_equals((string) $_SESSION['module_csrf'], $posted)) {
+        throw new RuntimeException('The form expired. Refresh and try again.');
     }
-
 }
 
-// Fetch all registered platform users
-$query = "
-    SELECT user_id, full_name, email, role, status, created_at 
-    FROM users 
-    ORDER BY created_at DESC
-";
-
-$users = $pdo->query($query)->fetchAll();
-
+$pageTitle = 'Manage Users | UniStay Admin';
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
+    try {
+        usAdminCsrf();
+        $status = $_POST['status'] ?? '';
+        $id = filter_var($_POST['user_id'] ?? null, FILTER_VALIDATE_INT, ['options'=>['min_range'=>1]]);
+        if (!is_string($status) || !in_array($status, ['active','suspended'], true) || !$id) {
+            throw new InvalidArgumentException('Choose a valid account and status.');
+        }
+        if ((int) $id === (int) ($_SESSION['user_id'] ?? 0)) {
+            throw new InvalidArgumentException('You cannot suspend your own admin account.');
+        }
+        // Never modify admin accounts from the public admin table controls.
+        $stmt = $pdo->prepare('UPDATE `User` SET status = ? WHERE user_id = ? AND role <> ?');
+        $stmt->execute([$status, (int)$id, 'admin']);
+        header('Location: /public/admin/users.php?updated=1', true, 303);
+        exit;
+    } catch (Throwable $e) {
+        $errorMessage = $e instanceof PDOException ? 'Unable to update the account right now.' : $e->getMessage();
+        error_log('UniStay admin user update: ' . $e->getMessage());
+    }
+}
+$users = $pdo->query('SELECT user_id, full_name, email, role, status FROM `User` ORDER BY user_id DESC LIMIT 500')->fetchAll(PDO::FETCH_ASSOC);
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -45,9 +49,10 @@ $users = $pdo->query($query)->fetchAll();
 
     <title><?php echo htmlspecialchars($pageTitle); ?></title>
 
-    <link rel="stylesheet" href="../../src/styles/style.css">
-    <link rel="stylesheet" href="users.css">
+    <link rel="stylesheet" href="/src/styles/style.css">
+    <link rel="stylesheet" href="/assets/css/users.css">
 
+    <link rel="stylesheet" href="/src/styles/unistay-theme.css">
 </head>
 
 <body>
@@ -56,6 +61,11 @@ $users = $pdo->query($query)->fetchAll();
 
 
 <main class="admin-page-layout">
+    <?php if ($errorMessage !== ''): ?>
+      <p class="us-admin-notice us-admin-error" role="alert"><?= htmlspecialchars($errorMessage, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></p>
+    <?php elseif (isset($_GET['updated']) || isset($_GET['added'])): ?>
+      <p class="us-admin-notice us-admin-success" role="status">Changes saved successfully.</p>
+    <?php endif; ?>
 
     <div class="container">
 
@@ -67,7 +77,7 @@ $users = $pdo->query($query)->fetchAll();
                 <h1>Manage Users</h1>
 
                 <p class="dashboard-welcome">
-                    Monitor accounts, update roles, and manage access statuses.
+                    Monitor accounts and manage access statuses.
                 </p>
             </div>
 
@@ -95,7 +105,7 @@ $users = $pdo->query($query)->fetchAll();
                         <?php foreach ($users as $user): ?>
                             <tr>
                                 <td>
-                                    <strong><?php echo htmlspecialchars($user['full_name']); ?></strong>
+                                    <strong><?php echo htmlspecialchars((string) ($user['full_name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></strong>
                                 </td>
                                 
                                 <td>
@@ -118,11 +128,12 @@ $users = $pdo->query($query)->fetchAll();
                                 </td>
                                 
                                 <td>
-                                    <form method="POST" class="inline-form">
+                                    <form method="POST" class="inline-form" onsubmit="return confirm('Update this account status?')">
                                         
+                                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
                                         <input type="hidden" name="user_id" value="<?php echo $user['user_id']; ?>">
                                         
-                                        <select name="status" class="form-control" style="padding: 6px 10px;">
+                                        <select name="status" <?= $user['role'] === 'admin' ? 'disabled' : '' ?> class="form-control" style="padding: 6px 10px;">
                                             <option value="active" <?php echo ($user['status'] == 'active') ? 'selected' : ''; ?>>
                                                 Active
                                             </option>
@@ -131,7 +142,7 @@ $users = $pdo->query($query)->fetchAll();
                                             </option>
                                         </select>
 
-                                        <button type="submit" name="update_status" class="btn btn-outline" style="padding: 6px 12px;">
+                                        <button type="submit" name="update_status" <?= $user['role'] === 'admin' ? 'disabled' : '' ?> class="btn btn-outline" style="padding: 6px 12px;">
                                             Update
                                         </button>
 

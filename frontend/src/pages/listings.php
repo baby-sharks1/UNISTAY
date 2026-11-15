@@ -1,5 +1,5 @@
-
 <?php
+if (session_status() !== PHP_SESSION_ACTIVE) { session_start(); }
 // frontend/src/pages/listings.php
 // Public visitors can browse listings without logging in.
 require_once __DIR__ . '/../../../backend/includes/database.php';
@@ -40,8 +40,7 @@ $loadError = false;
 try {
     $pdo = db(); // Existing TiDB connection. No new configuration needed.
 
-    // Database query disabled for commit
-    // $universities = $pdo->query(
+     $universities = $pdo->query(
         'SELECT university_id, name, city FROM `University` ORDER BY name'
     )->fetchAll(PDO::FETCH_ASSOC);
 
@@ -109,10 +108,8 @@ try {
         LIMIT 60
         SQL;
 
-    // Database query disabled for commit
-    // $stmt = $pdo->prepare($sql);
-    // Database query disabled for commit
-    // $stmt->execute($params);
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
     $boardingPlaces = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (Throwable $exception) {
     // Don't expose DB credentials or queries to visitors.
@@ -128,6 +125,7 @@ try {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= $e($pageTitle) ?></title>
     <link rel="stylesheet" href="/src/styles/style.css">
+    <link rel="stylesheet" href="/src/styles/unistay-theme.css">
 </head>
 <body>
 

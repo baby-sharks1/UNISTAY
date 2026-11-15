@@ -1,5 +1,11 @@
-
 <?php
+// Archived teammate layout template. Real owner routes run from /owner/.
+// Do not expose demonstration data or demo-only POST forms as public functionality.
+if (!defined('UNISTAY_ARCHIVED_OWNER_TEMPLATE')) {
+    http_response_code(404);
+    exit('This page has moved to the Owner dashboard.');
+}
+
 
 $pageTitle = "Add Boarding Listing | UniStay";
 
@@ -96,8 +102,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     <title><?php echo htmlspecialchars($pageTitle); ?></title>
 
-    <link rel="stylesheet" href="../../src/styles/style.css">
+    <link rel="stylesheet" href="/src/styles/style.css">
 
+    <link rel="stylesheet" href="/src/styles/unistay-theme.css">
 </head>
 
 <body>

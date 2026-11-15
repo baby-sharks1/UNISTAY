@@ -2,6 +2,7 @@
 // frontend/src/pages/listing.php
 // Public boarding details: no login required for viewing.
 declare(strict_types=1);
+if (session_status() !== PHP_SESSION_ACTIVE) { session_start(); }
 require_once __DIR__ . '/../../../backend/includes/database.php';
 
 function detail_escape(mixed $value): string
@@ -33,8 +34,7 @@ if ($id === false || $id === null) {
 } else {
     try {
         $pdo = db();
-        // Database query disabled for commit
-        // $stmt = $pdo->prepare(<<<'SQL'
+         $stmt = $pdo->prepare(<<<'SQL'
             SELECT b.listing_id, b.title, b.address, b.description, b.facilities,
                    b.gender_category, b.available_from, b.cover_image_url,
                    b.rent_amount, b.capacity, b.availability,
@@ -49,23 +49,20 @@ if ($id === false || $id === null) {
               AND b.availability IN ('available', 'soon', 'unavailable')
             LIMIT 1
             SQL);
-        // Database query disabled for commit
-        // $stmt->execute([(int) $id]);
+        $stmt->execute([(int) $id]);
         $boardingPlace = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
 
         if ($boardingPlace === null) {
             http_response_code(404);
             $errorMessage = 'This boarding place was not found.';
         } else {
-            // Database query disabled for commit
-            // $photoQuery = $pdo->prepare(<<<'SQL'
+             $photoQuery = $pdo->prepare(<<<'SQL'
                 SELECT file_path FROM `ListingPhoto`
                 WHERE listing_id = ?
                 ORDER BY is_cover DESC, photo_id ASC
                 LIMIT 12
                 SQL);
-            // Database query disabled for commit
-            // $photoQuery->execute([(int) $id]);
+            $photoQuery->execute([(int) $id]);
             foreach ($photoQuery->fetchAll(PDO::FETCH_COLUMN) as $url) {
                 $validUrl = detail_image_url($url);
                 if ($validUrl !== null && !in_array($validUrl, $photos, true)) {
@@ -141,6 +138,7 @@ if ($boardingPlace !== null && $errorMessage === '') {
         .unistay-photo-thumbnails img { display: block; width: 90px; height: 65px; object-fit: cover; }
         .unistay-detail-empty { padding: 35px 0; text-align: center; }
     </style>
+    <link rel="stylesheet" href="/src/styles/unistay-theme.css">
 </head>
 <body>
 <?php include __DIR__ . '/../components/header.php'; ?>

@@ -32,7 +32,7 @@ function appDashboardForRole(string $role): string
     return match ($role) {
         'admin' => '/admin/dashboard.php',
         'owner' => '/owner/dashboard.php',
-        default => '/student/dashboard.php',
+        default => '/tenant/dashboard.php',
     };
 }
 

@@ -26,8 +26,7 @@ function unistayAdminLoginAllowed(PDO $pdo, string $email): bool
         return false;
     }
     // Fail closed if the database contains multiple enabled admin accounts.
-    // Database query disabled for commit
-    // $count = (int) $pdo->query("SELECT COUNT(*) FROM `User` WHERE role = 'admin' AND status = 'active'")
+     $count = (int) $pdo->query("SELECT COUNT(*) FROM `User` WHERE role = 'admin' AND status = 'active'")
         ->fetchColumn();
     return $count === 1;
 }
@@ -36,7 +35,7 @@ $pageTitle = 'Login | UniStay';
 $errorMessage = '';
 $emailValue = '';
 $dashboardRoutes = [
-    'student' => '/student/dashboard.php',
+    'student' => '/tenant/dashboard.php',
     'owner'   => '/owner/dashboard.php',
     'admin'   => '/public/admin/dashboard.php',
 ];
@@ -64,13 +63,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $pdo = db();
 
             // Match the real TiDB table name: `User` (not `users`).
-            // Database query disabled for commit
-            // $stmt = $pdo->prepare(
+             $stmt = $pdo->prepare(
                 'SELECT user_id, full_name, password_hash, role, status
                  FROM `User` WHERE email = ? LIMIT 1'
             );
-            // Database query disabled for commit
-            // $stmt->execute([$emailValue]);
+            $stmt->execute([$emailValue]);
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
             $storedHash = is_array($user) ? ($user['password_hash'] ?? null) : null;
 
@@ -90,7 +87,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['full_name'] = (string) ($user['full_name'] ?? '');
                 unset($_SESSION['unistay_login_csrf']);
 
-                header('Location: ' . unistayPostLoginDestination($_SESSION['role']), true, 303);
+                header('Location: ' . $dashboardRoutes[$_SESSION['role']], true, 303);
                 exit;
             }
         } catch (Throwable $e) {
@@ -132,6 +129,7 @@ function loginEscape(string $text): string
     <?php if ($googleEnabled): ?>
         <script src="https://accounts.google.com/gsi/client" async defer></script>
     <?php endif; ?>
+    <link rel="stylesheet" href="/src/styles/unistay-theme.css">
 </head>
 <body>
 <?php include __DIR__ . '/../components/header.php'; ?>
@@ -186,7 +184,7 @@ function loginEscape(string $text): string
                     <div class="form-group">
                         <label for="google-role">Joining as</label>
                         <select class="form-control" id="google-role">
-                            <option value="student">Student</option>
+                            <option value="student">Tenant</option>
                             <option value="owner">Boarding owner</option>
                         </select>
                         <p class="unistay-google-hint">Only used when creating a new account. Your existing role cannot be changed here.</p>

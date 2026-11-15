@@ -6,18 +6,18 @@ require_once __DIR__ . '/rent_module.php';
 function dashboard_one(PDO $pdo, string $sql, array $params): array
 {
     // Database query disabled for commit
-    // $query = $pdo->prepare($sql);
+     $query = $pdo->prepare($sql);
     // Database query disabled for commit
-    // $query->execute($params);
+     $query->execute($params);
     return $query->fetch(PDO::FETCH_ASSOC) ?: [];
 }
 
 function dashboard_many(PDO $pdo, string $sql, array $params): array
 {
     // Database query disabled for commit
-    // $query = $pdo->prepare($sql);
+     $query = $pdo->prepare($sql);
     // Database query disabled for commit
-    // $query->execute($params);
+     $query->execute($params);
     return $query->fetchAll(PDO::FETCH_ASSOC);
 }
 
