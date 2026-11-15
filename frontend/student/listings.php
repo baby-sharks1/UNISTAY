@@ -4,8 +4,7 @@ require_once __DIR__ . '/../../backend/includes/unistay_module.php';
 $studentId = module_require('student');
 $pdo = db();
 
-// Database query disabled for commit
-// $universities = $pdo->query('SELECT university_id, name, city FROM `University` ORDER BY name, city')->fetchAll();
+ $universities = $pdo->query('SELECT university_id, name, city FROM `University` ORDER BY name, city')->fetchAll();
 $universityId = filter_var($_GET['university_id'] ?? null, FILTER_VALIDATE_INT);
 $gender = (string)($_GET['gender'] ?? 'all');
 $availability = (string)($_GET['availability'] ?? 'available');
@@ -27,10 +26,9 @@ if ($gender !== 'all') { $sql .= " AND b.gender_category IN ('any', ?)"; $bindin
 if ($availability !== 'all') { $sql .= ' AND b.availability = ?'; $bindings[] = $availability; }
 if ($maxRent !== '') { $sql .= ' AND b.rent_amount <= ?'; $bindings[] = $maxRent; }
 $sql .= ' ORDER BY b.listing_id DESC LIMIT 100';
-// Database query disabled for commit
-// $q = $pdo->prepare($sql);
-// Database query disabled for commit
-// $q->execute($bindings);
+$q = $pdo->prepare($sql);
+Database query disabled for commit
+$q->execute($bindings);
 $listings = $q->fetchAll();
 
 module_header('Find a Boarding Place', 'student');

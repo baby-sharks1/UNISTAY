@@ -9,7 +9,7 @@ require_admin();
 
 $pdo = db();
 
-// Handle status updates for user accounts
+Handle status updates for user accounts
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
 
     $status = $_POST['status'] ?? '';

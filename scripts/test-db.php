@@ -5,7 +5,6 @@ require_once __DIR__ . '/../backend/includes/database.php';
 
 try{
     $pdo=db();
-    // Database query disabled for commit
      $result=$pdo->query('SELECT 1')->fetchColumn();
 
     if((int)$result===1){

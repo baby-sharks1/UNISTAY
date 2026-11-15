@@ -71,23 +71,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $availableFrom = $date->format('Y-m-d');
             }
 
-            // Database query disabled for commit
              $q = $pdo->prepare('SELECT university_id FROM `University` WHERE university_id = ? LIMIT 1');
-            // Database query disabled for commit
              $q->execute([$universityId]);
             if (!$q->fetchColumn()) {
                 throw new InvalidArgumentException('Choose an existing university.');
             }
             if ($action === 'create') {
-                // Database query disabled for commit
                  $id = (int)$pdo->query('SELECT NEXTVAL(unistay_listing_seq)')->fetchColumn();
-                // Database query disabled for commit
                 $q = $pdo->prepare('INSERT INTO `BoardingListing`
                     (listing_id, owner_id, university_id, rent_amount, capacity, availability,
                      title, address, description, facilities, gender_category, available_from, cover_image_url)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
-                // Database query disabled for commit
-                // $q->execute([$id, $ownerId, $universityId, $rent, $capacity, $availability,
+                 $q->execute([$id, $ownerId, $universityId, $rent, $capacity, $availability,
                     $title, $address, $description !== '' ? $description : null,
                     $facilities !== '' ? $facilities : null, $gender, $availableFrom, $coverImageUrl]);
                 // The listing must exist before photos can be attached to its ID.
@@ -97,25 +92,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 $id = module_positive_int($_POST['listing_id'] ?? null, 'listing ID');
                 $pdo->beginTransaction();
-                // Database query disabled for commit
                  $lock = $pdo->prepare('SELECT listing_id FROM `BoardingListing` WHERE listing_id = ? AND owner_id = ? FOR UPDATE');
-                // Database query disabled for commit
                 $lock->execute([$id, $ownerId]);
                 if (!$lock->fetchColumn()) throw new InvalidArgumentException('Listing not found or not yours.');
-                // Database query disabled for commit
                  $count = $pdo->prepare("SELECT COUNT(*) FROM `Tenancy` WHERE listing_id = ? AND status = 'active'");
-                // Database query disabled for commit
                  $count->execute([$id]);
                 if ((int)$count->fetchColumn() > $capacity) {
                     throw new InvalidArgumentException('Capacity cannot be less than current active occupancy.');
                 }
-                // Database query disabled for commit
                  $q = $pdo->prepare('UPDATE `BoardingListing` SET
                     university_id = ?, rent_amount = ?, capacity = ?, availability = ?,
                     title = ?, address = ?, description = ?, facilities = ?, gender_category = ?,
                     available_from = ?, cover_image_url = ?
                     WHERE listing_id = ? AND owner_id = ?');
-                // Database query disabled for commit
                  $q->execute([$universityId, $rent, $capacity, $availability,
                     $title, $address, $description !== '' ? $description : null,
                     $facilities !== '' ? $facilities : null, $gender, $availableFrom, $coverImageUrl,
@@ -125,9 +114,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         } elseif ($action === 'deactivate') {
             $id = module_positive_int($_POST['listing_id'] ?? null, 'listing ID');
-            // Database query disabled for commit
              $q = $pdo->prepare("UPDATE `BoardingListing` SET availability = 'unavailable', available_from = NULL WHERE listing_id = ? AND owner_id = ?");
-            // Database query disabled for commit
              $q->execute([$id, $ownerId]);
             module_flash($q->rowCount() ? 'Listing marked unavailable; inquiry and tenancy history are preserved.' : 'Listing not found.', $q->rowCount() === 0);
         } else {
@@ -143,7 +130,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     module_redirect($path);
 }
 
-// Database query disabled for commit
 $q = $pdo->prepare('SELECT b.listing_id, b.university_id, b.rent_amount, b.capacity, b.availability,
     b.title, b.address, b.description, b.facilities, b.gender_category, b.available_from, b.cover_image_url,
     u.name AS university_name, u.city AS university_city,
@@ -152,10 +138,8 @@ $q = $pdo->prepare('SELECT b.listing_id, b.university_id, b.rent_amount, b.capac
     FROM `BoardingListing` b
     LEFT JOIN `University` u ON u.university_id = b.university_id
     WHERE b.owner_id = ? ORDER BY b.listing_id DESC');
-// Database query disabled for commit
 $q->execute([$ownerId]);
 $listings = $q->fetchAll();
-// Database query disabled for commit
  $universities = $pdo->query('SELECT university_id, name, city FROM `University` ORDER BY name, city, university_id')->fetchAll(PDO::FETCH_ASSOC);
 $edit = null;
 $requested = filter_var($_GET['edit'] ?? null, FILTER_VALIDATE_INT);

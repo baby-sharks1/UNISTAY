@@ -5,8 +5,7 @@ $studentId = module_require('student');
 $pdo = db();
 $id = filter_var($_GET['id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
 if (!$id) { http_response_code(404); exit('Boarding listing not found.'); }
-// Database query disabled for commit
-// $q = $pdo->prepare('SELECT b.listing_id, b.title, b.address, b.description, b.facilities, b.gender_category,
+ $q = $pdo->prepare('SELECT b.listing_id, b.title, b.address, b.description, b.facilities, b.gender_category,
     b.available_from, b.cover_image_url, b.rent_amount, b.capacity, b.availability,
     u.name AS university_name, u.city AS university_city,
     owner.full_name AS owner_name, owner.phone AS owner_phone, owner.share_phone_with_inquirers,
@@ -15,14 +14,12 @@ if (!$id) { http_response_code(404); exit('Boarding listing not found.'); }
     FROM `BoardingListing` b LEFT JOIN `University` u ON u.university_id = b.university_id
     LEFT JOIN `User` owner ON owner.user_id = b.owner_id
     WHERE b.listing_id = ? LIMIT 1');
-// Database query disabled for commit
-// $q->execute([$studentId, (int)$id]);
+$q->execute([$studentId, (int)$id]);
 $item = $q->fetch();
 if (!$item) { http_response_code(404); exit('Boarding listing not found.'); }
-// Database query disabled for commit
-// $photosQuery = $pdo->prepare('SELECT file_path FROM `ListingPhoto` WHERE listing_id = ? ORDER BY is_cover DESC, photo_id ASC');
-// Database query disabled for commit
-// $photosQuery->execute([(int)$id]);
+$photosQuery = $pdo->prepare('SELECT file_path FROM `ListingPhoto` WHERE listing_id = ? ORDER BY is_cover DESC, photo_id ASC');
+Database query disabled for commit
+$photosQuery->execute([(int)$id]);
 $photoPaths = array_map(static fn(array $p): string => (string)$p['file_path'], $photosQuery->fetchAll());
 // Keep previous cover URL for listings that haven't uploaded gallery photos.
 if (!$photoPaths && $item['cover_image_url']) $photoPaths[] = (string)$item['cover_image_url'];

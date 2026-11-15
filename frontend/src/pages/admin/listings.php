@@ -15,7 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
     if ($_POST['action'] === 'deactivate' && !empty($_POST['listing_id'])) {
         
-        // Soft-delete to preserve tenancy history
+        Soft-delete to preserve tenancy history
         $stmt = $pdo->prepare("UPDATE boarding_listings SET availability_status = 'unavailable' WHERE listing_id = ?");
         $stmt->execute([$_POST['listing_id']]);
 

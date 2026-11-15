@@ -10,12 +10,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         if (($_POST['action'] ?? '') !== 'end') throw new InvalidArgumentException('Unknown action.');
         $id = module_positive_int($_POST['tenancy_id'] ?? null, 'tenancy ID');
-        // Database query disabled for commit
          $q = $pdo->prepare("UPDATE `Tenancy` t
             INNER JOIN `BoardingListing` b ON b.listing_id = t.listing_id
             SET t.status = 'ended', t.end_date = CURRENT_DATE()
             WHERE t.tenancy_id = ? AND b.owner_id = ? AND t.status = 'active'");
-        // Database query disabled for commit
         $q->execute([$id, $ownerId]);
         $updated = $q->rowCount() === 1;
         module_flash($updated ? 'Tenancy ended. Its rent and inquiry history remain available.' : 'No active tenancy was changed.', !$updated);
@@ -27,7 +25,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     module_redirect($path);
 }
 
-// Database query disabled for commit
  $q = $pdo->prepare("SELECT t.tenancy_id, t.listing_id, t.start_date, t.end_date, t.agreed_rent, t.status,
         b.title AS listing_title, u.full_name, u.email,
         (SELECT COUNT(*) FROM `RentPayment` p WHERE p.tenancy_id = t.tenancy_id) AS bill_count,
@@ -36,7 +33,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     INNER JOIN `BoardingListing` b ON b.listing_id = t.listing_id
     LEFT JOIN `User` u ON u.user_id = t.student_user_id
     WHERE b.owner_id = ? ORDER BY (t.status = 'active') DESC, t.tenancy_id DESC");
-// Database query disabled for commit
  $q->execute([$ownerId]);
 $all = $q->fetchAll();
 $active = array_values(array_filter($all, static fn($t) => $t['status'] === 'active'));

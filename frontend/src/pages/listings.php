@@ -40,7 +40,6 @@ $loadError = false;
 try {
     $pdo = db(); // Existing TiDB connection. No new configuration needed.
 
-    // Database query disabled for commit
         $universities = $pdo->query(
        'SELECT university_id, name, city FROM `University` ORDER BY name'
     )->fetchAll(PDO::FETCH_ASSOC);
@@ -109,9 +108,7 @@ try {
         LIMIT 60
         SQL;
 
-    // Database query disabled for commit
      $stmt = $pdo->prepare($sql);
-    // Database query disabled for commit
      $stmt->execute($params);
     $boardingPlaces = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (Throwable $exception) {

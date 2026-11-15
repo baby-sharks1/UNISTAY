@@ -12,16 +12,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $action = (string)($_POST['action'] ?? '');
         if (!in_array($action, ['approve', 'reject'], true)) throw new InvalidArgumentException('Invalid decision.');
         $pdo->beginTransaction();
-        // Database query disabled for commit
          $q = $pdo->prepare('SELECT i.status FROM `Inquiry` i INNER JOIN `BoardingListing` b ON b.listing_id = i.listing_id WHERE i.inquiry_id = ? AND b.owner_id = ? FOR UPDATE');
-        // Database query disabled for commit
          $q->execute([$id, $ownerId]);
         $status = $q->fetchColumn();
         if ($status !== 'pending') throw new InvalidArgumentException('This inquiry is missing or no longer pending.');
         $newStatus = $action === 'approve' ? 'approved' : 'rejected';
-        // Database query disabled for commit
          $q = $pdo->prepare('UPDATE `Inquiry` SET status = ? WHERE inquiry_id = ? AND status = ?');
-        // Database query disabled for commit
          $q->execute([$newStatus, $id, 'pending']);
         if ($q->rowCount() !== 1) throw new RuntimeException('Inquiry changed during processing.');
         $pdo->commit();
@@ -36,7 +32,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     module_redirect($path);
 }
 
-// Database query disabled for commit
 $q = $pdo->prepare('SELECT i.inquiry_id, i.listing_id, i.student_user_id, i.message, i.status,
     b.title AS listing_title, b.rent_amount, b.capacity,
     u.full_name, u.email,
@@ -45,7 +40,6 @@ $q = $pdo->prepare('SELECT i.inquiry_id, i.listing_id, i.student_user_id, i.mess
     INNER JOIN `BoardingListing` b ON b.listing_id = i.listing_id
     LEFT JOIN `User` u ON u.user_id = i.student_user_id
     WHERE b.owner_id = ? ORDER BY i.inquiry_id DESC');
-// Database query disabled for commit
  $q->execute([$ownerId]);
 $allInquiries = $q->fetchAll();
 $counts = ['all' => count($allInquiries), 'pending' => 0, 'approved' => 0, 'confirmed' => 0, 'rejected' => 0, 'withdrawn' => 0];

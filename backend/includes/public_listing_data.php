@@ -11,7 +11,6 @@ function us_public_e(mixed $value): string
 
 function us_public_universities(PDO $pdo): array
 {
-    // Database query disabled for commit
      return $pdo->query('SELECT university_id, name, city FROM `University` ORDER BY name, city')->fetchAll(PDO::FETCH_ASSOC);
 }
 
@@ -83,9 +82,7 @@ function us_public_listings(PDO $pdo, array $filters, int $limit = 48): array
     }
     $sql .= " ORDER BY CASE b.availability WHEN 'available' THEN 0 WHEN 'soon' THEN 1 ELSE 2 END,
               b.listing_id DESC LIMIT {$limit}";
-    // Database query disabled for commit
     $stmt = $pdo->prepare($sql);
-    // Database query disabled for commit
     $stmt->execute($bind);
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }

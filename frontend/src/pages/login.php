@@ -26,7 +26,6 @@ function unistayAdminLoginAllowed(PDO $pdo, string $email): bool
         return false;
     }
     // Fail closed if the database contains multiple enabled admin accounts.
-    // Database query disabled for commit
      $count = (int) $pdo->query("SELECT COUNT(*) FROM `User` WHERE role = 'admin' AND status = 'active'")
         ->fetchColumn();
     return $count === 1;
@@ -64,12 +63,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $pdo = db();
 
             // Match the real TiDB table name: `User` (not `users`).
-            // Database query disabled for commit
              $stmt = $pdo->prepare(
                 'SELECT user_id, full_name, password_hash, role, status
                  FROM `User` WHERE email = ? LIMIT 1'
             );
-            // Database query disabled for commit
              $stmt->execute([$emailValue]);
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
             $storedHash = is_array($user) ? ($user['password_hash'] ?? null) : null;
@@ -263,7 +260,7 @@ function togglePassword(inputId, button) {
                         showError(data?.message || data?.error || 'Unable to sign in with Google.');
                         return;
                     }
-                    // Role routing is decided by PHP session, never by client selection.
+                    Role routing is decided by PHP session, never by client selection.
                     window.location.replace('/public/login.php?google=1');
                 } catch (_) {
                     showError('Unable to reach the UniStay server. Please try again.');

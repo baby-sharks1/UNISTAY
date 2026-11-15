@@ -17,39 +17,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 throw new InvalidArgumentException('Message must be between 5 and 2,000 characters.');
             }
             $pdo->beginTransaction();
-            // Database query disabled for commit
-            // $q = $pdo->prepare('SELECT owner_id, availability, capacity FROM `BoardingListing` WHERE listing_id = ? FOR UPDATE');
-            // Database query disabled for commit
-            // $q->execute([$listingId]);
+            $q = $pdo->prepare('SELECT owner_id, availability, capacity FROM `BoardingListing` WHERE listing_id = ? FOR UPDATE');
+            Database query disabled for commit
+            $q->execute([$listingId]);
             $listing = $q->fetch();
             if (!$listing || $listing['availability'] !== 'available' || (int)$listing['capacity'] < 1) {
                 throw new InvalidArgumentException('This listing is not available for inquiries.');
             }
             if ((int)$listing['owner_id'] === $studentId) throw new InvalidArgumentException('You cannot inquire about your own listing.');
-            // Database query disabled for commit
-            // $q = $pdo->prepare("SELECT COUNT(*) FROM `Tenancy` WHERE listing_id = ? AND status = 'active'");
-            // Database query disabled for commit
-            // $q->execute([$listingId]);
+            $q = $pdo->prepare("SELECT COUNT(*) FROM `Tenancy` WHERE listing_id = ? AND status = 'active'");
+            Database query disabled for commit
+            $q->execute([$listingId]);
             if ((int)$q->fetchColumn() >= (int)$listing['capacity']) throw new InvalidArgumentException('This listing is currently full.');
-            // Database query disabled for commit
-            // $q = $pdo->prepare("SELECT COUNT(*) FROM `Inquiry` WHERE listing_id = ? AND student_user_id = ? AND status IN ('pending', 'approved', 'confirmed')");
-            // Database query disabled for commit
-            // $q->execute([$listingId, $studentId]);
+            $q = $pdo->prepare("SELECT COUNT(*) FROM `Inquiry` WHERE listing_id = ? AND student_user_id = ? AND status IN ('pending', 'approved', 'confirmed')");
+            Database query disabled for commit
+            $q->execute([$listingId, $studentId]);
             if ((int)$q->fetchColumn() > 0) throw new InvalidArgumentException('You already have an open inquiry or tenancy for this listing.');
-            // Database query disabled for commit
-            // $id = (int)$pdo->query('SELECT NEXTVAL(unistay_inquiry_seq)')->fetchColumn();
-            // Database query disabled for commit
-            // $q = $pdo->prepare('INSERT INTO `Inquiry` (inquiry_id, student_user_id, listing_id, message, status) VALUES (?, ?, ?, ?, ?)');
-            // Database query disabled for commit
-            // $q->execute([$id, $studentId, $listingId, $message, 'pending']);
+            $id = (int)$pdo->query('SELECT NEXTVAL(unistay_inquiry_seq)')->fetchColumn();
+            Database query disabled for commit
+            $q = $pdo->prepare('INSERT INTO `Inquiry` (inquiry_id, student_user_id, listing_id, message, status) VALUES (?, ?, ?, ?, ?)');
+            Database query disabled for commit
+            $q->execute([$id, $studentId, $listingId, $message, 'pending']);
             $pdo->commit();
             module_flash('Inquiry sent successfully! The owner can review it now.');
         } elseif ($action === 'withdraw') {
             $id = module_positive_int($_POST['inquiry_id'] ?? null, 'inquiry ID');
-            // Database query disabled for commit
-            // $q = $pdo->prepare("UPDATE `Inquiry` SET status = 'withdrawn' WHERE inquiry_id = ? AND student_user_id = ? AND status = 'pending'");
-            // Database query disabled for commit
-            // $q->execute([$id, $studentId]);
+            $q = $pdo->prepare("UPDATE `Inquiry` SET status = 'withdrawn' WHERE inquiry_id = ? AND student_user_id = ? AND status = 'pending'");
+            Database query disabled for commit
+            $q->execute([$id, $studentId]);
             module_flash($q->rowCount() === 1 ? 'Inquiry withdrawn.' : 'Only your pending inquiries can be withdrawn.', $q->rowCount() !== 1);
         } else {
             throw new InvalidArgumentException('Unknown operation.');
@@ -64,15 +59,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     module_redirect($path);
 }
 
-// Database query disabled for commit
-// $q = $pdo->prepare('SELECT i.inquiry_id, i.listing_id, i.message, i.status,
+ $q = $pdo->prepare('SELECT i.inquiry_id, i.listing_id, i.message, i.status,
     b.title AS listing_title, b.rent_amount, b.address, b.availability,
     (SELECT p.file_path FROM `ListingPhoto` p WHERE p.listing_id = b.listing_id ORDER BY p.is_cover DESC, p.photo_id ASC LIMIT 1) AS gallery_cover,
     b.cover_image_url
     FROM `Inquiry` i JOIN `BoardingListing` b ON b.listing_id = i.listing_id
     WHERE i.student_user_id = ? ORDER BY i.inquiry_id DESC');
-// Database query disabled for commit
-// $q->execute([$studentId]);
+$q->execute([$studentId]);
 $all = $q->fetchAll();
 $counts = ['all' => count($all), 'pending' => 0, 'approved' => 0, 'confirmed' => 0, 'rejected' => 0, 'withdrawn' => 0];
 foreach ($all as $item) if (isset($counts[$item['status']])) $counts[$item['status']]++;
@@ -85,23 +78,20 @@ $selectedListing = null;
 $existingOpen = false;
 $selectedCanInquire = false;
 if ($selected) {
-    // Database query disabled for commit
-    // $listingStmt = $pdo->prepare('SELECT b.listing_id, b.title, b.address, b.rent_amount, b.capacity, b.availability,
+     $listingStmt = $pdo->prepare('SELECT b.listing_id, b.title, b.address, b.rent_amount, b.capacity, b.availability,
         u.name AS university_name,
         (SELECT COUNT(*) FROM `Tenancy` t WHERE t.listing_id = b.listing_id AND t.status = \'active\') AS occupied,
         (SELECT p.file_path FROM `ListingPhoto` p WHERE p.listing_id = b.listing_id ORDER BY p.is_cover DESC, p.photo_id ASC LIMIT 1) AS gallery_cover,
         b.cover_image_url
         FROM `BoardingListing` b LEFT JOIN `University` u ON u.university_id = b.university_id WHERE b.listing_id = ? LIMIT 1');
-    // Database query disabled for commit
-    // $listingStmt->execute([(int)$selected]);
+    $listingStmt->execute([(int)$selected]);
     $selectedListing = $listingStmt->fetch();
     if ($selectedListing) {
         $selectedCanInquire = $selectedListing['availability'] === 'available'
             && (int)$selectedListing['capacity'] > (int)$selectedListing['occupied'];
-        // Database query disabled for commit
-        // $duplicateStmt = $pdo->prepare("SELECT COUNT(*) FROM `Inquiry` WHERE listing_id = ? AND student_user_id = ? AND status IN ('pending', 'approved', 'confirmed')");
-        // Database query disabled for commit
-        // $duplicateStmt->execute([(int)$selected, $studentId]);
+        $duplicateStmt = $pdo->prepare("SELECT COUNT(*) FROM `Inquiry` WHERE listing_id = ? AND student_user_id = ? AND status IN ('pending', 'approved', 'confirmed')");
+        Database query disabled for commit
+        $duplicateStmt->execute([(int)$selected, $studentId]);
         $existingOpen = (int)$duplicateStmt->fetchColumn() > 0;
     }
 }

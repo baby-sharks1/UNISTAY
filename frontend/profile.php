@@ -15,9 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             throw new InvalidArgumentException('Add a contact phone number before enabling sharing.');
         }
         // Only this signed-in user's editable fields may change.
-        // Database query disabled for commit
          $q = $pdo->prepare('UPDATE `User` SET full_name = ?, phone = ?, share_phone_with_inquirers = ? WHERE user_id = ? AND role = ?');
-        // Database query disabled for commit
          $q->execute([$name, $phone, $share, $userId, $role]);
         module_flash('Profile updated successfully.');
     } catch (InvalidArgumentException $e) {
@@ -28,9 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     module_redirect($path);
 }
 
-// Database query disabled for commit
  $q = $pdo->prepare('SELECT user_id, full_name, email, phone, role, share_phone_with_inquirers FROM `User` WHERE user_id = ? AND role = ? LIMIT 1');
-// Database query disabled for commit
  $q->execute([$userId, $role]);
 $profile = $q->fetch(PDO::FETCH_ASSOC);
 if (!$profile) { http_response_code(404); exit('Account not found.'); }

@@ -42,9 +42,7 @@ function unistay_rollback_cloud_uploads(array $uploaded, int $listingId): void
 }
 
 // Every action verifies the authenticated user owns the listing.
-// Database query disabled for commit
  $check = $pdo->prepare('SELECT listing_id, title FROM `BoardingListing` WHERE listing_id = ? AND owner_id = ? LIMIT 1');
-// Database query disabled for commit
  $check->execute([$listingId, $ownerId]);
 $listing = $check->fetch();
 if (!$listing) {
@@ -67,9 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 throw new InvalidArgumentException('Choose 1–5 photos at a time.');
             }
             // Fast capacity check to avoid unnecessary network calls.
-            // Database query disabled for commit
             $countStmt = $pdo->prepare('SELECT COUNT(*) FROM `ListingPhoto` WHERE listing_id = ?');
-            // Database query disabled for commit
              $countStmt->execute([$listingId]);
             if ((int)$countStmt->fetchColumn() + $fileCount > 10) {
                 throw new InvalidArgumentException('Maximum 10 photos per listing.');
@@ -91,23 +87,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             // Prevent concurrent requests from exceeding 10 images per listing.
             $pdo->beginTransaction();
-            // Database query disabled for commit
             $lock = $pdo->prepare('SELECT listing_id FROM `BoardingListing` WHERE listing_id = ? AND owner_id = ? FOR UPDATE');
-            // Database query disabled for commit
              $lock->execute([$listingId, $ownerId]);
             if (!$lock->fetchColumn()) {
                 throw new InvalidArgumentException('You cannot edit this listing.');
             }
-            // Database query disabled for commit
              $countStmt->execute([$listingId]);
             $existingCount = (int)$countStmt->fetchColumn();
             if ($existingCount + count($uploaded) > 10) {
                 throw new InvalidArgumentException('Photo limit reached while uploading. Please refresh.');
             }
-            // Database query disabled for commit
              $insert = $pdo->prepare('INSERT INTO `ListingPhoto` (listing_id, file_path, cloud_public_id, is_cover) VALUES (?, ?, ?, ?)');
             foreach ($uploaded as $index => $photo) {
-                // Database query disabled for commit
                  $insert->execute([
                     $listingId,
                     $photo['file_path'],
@@ -122,16 +113,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif ($action === 'cover' || $action === 'remove') {
             $photoId = module_positive_int($_POST['photo_id'] ?? null, 'photo ID');
             $pdo->beginTransaction();
-            // Database query disabled for commit
              $lock = $pdo->prepare('SELECT listing_id FROM `BoardingListing` WHERE listing_id = ? AND owner_id = ? FOR UPDATE');
-            // Database query disabled for commit
             $lock->execute([$listingId, $ownerId]);
             if (!$lock->fetchColumn()) {
                 throw new InvalidArgumentException('You cannot edit this listing.');
             }
-            // Database query disabled for commit
              $get = $pdo->prepare('SELECT photo_id, file_path, cloud_public_id, is_cover FROM `ListingPhoto` WHERE photo_id = ? AND listing_id = ? FOR UPDATE');
-            // Database query disabled for commit
              $get->execute([$photoId, $listingId]);
             $photo = $get->fetch();
             if (!$photo) {
@@ -139,28 +126,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             if ($action === 'cover') {
-                // Database query disabled for commit
                  $pdo->prepare('UPDATE `ListingPhoto` SET is_cover = 0 WHERE listing_id = ?')->execute([$listingId]);
-                // Database query disabled for commit
                  $pdo->prepare('UPDATE `ListingPhoto` SET is_cover = 1 WHERE listing_id = ? AND photo_id = ?')
-                    // Database query disabled for commit
                      ->execute([$listingId, $photoId]);
                 $pdo->commit();
                 module_flash('Cover photo updated.');
             } else {
-                // Database query disabled for commit
                  $pdo->prepare('DELETE FROM `ListingPhoto` WHERE photo_id = ? AND listing_id = ?')->execute([$photoId, $listingId]);
                 // When the cover is removed, promote the first remaining photo.
                 if ((int)$photo['is_cover'] === 1) {
-                    // Database query disabled for commit
                      $next = $pdo->prepare('SELECT photo_id FROM `ListingPhoto` WHERE listing_id = ? ORDER BY photo_id ASC LIMIT 1');
-                    // Database query disabled for commit
                      $next->execute([$listingId]);
                     $nextId = $next->fetchColumn();
                     if ($nextId !== false) {
-                        // Database query disabled for commit
                          $pdo->prepare('UPDATE `ListingPhoto` SET is_cover = 1 WHERE photo_id = ? AND listing_id = ?')
-                            // Database query disabled for commit
                              ->execute([(int)$nextId, $listingId]);
                     }
                 }
@@ -201,9 +180,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     module_redirect($page);
 }
 
-// Database query disabled for commit
  $getPhotos = $pdo->prepare('SELECT photo_id, file_path, cloud_public_id, is_cover FROM `ListingPhoto` WHERE listing_id = ? ORDER BY is_cover DESC, photo_id ASC');
-// Database query disabled for commit
  $getPhotos->execute([$listingId]);
 $photos = $getPhotos->fetchAll();
 module_header('Photos · ' . (string)($listing['title'] ?: ('Listing #' . $listingId)), 'owner');

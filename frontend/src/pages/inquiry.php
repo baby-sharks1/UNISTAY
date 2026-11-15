@@ -58,7 +58,6 @@ if ($listingId === false || $listingId === null) {
 } else {
     try {
         $pdo = db();
-        // Database query disabled for commit
          $query = $pdo->prepare(<<<'SQL'
             SELECT b.listing_id, b.title, b.address, b.rent_amount,
                    b.capacity, b.availability, b.cover_image_url,
@@ -73,7 +72,6 @@ if ($listingId === false || $listingId === null) {
             LEFT JOIN `User` owner ON owner.user_id = b.owner_id
             WHERE b.listing_id = ? LIMIT 1
             SQL);
-        // Database query disabled for commit
          $query->execute([(int) $listingId]);
         $boardingPlace = $query->fetch(PDO::FETCH_ASSOC) ?: null;
         if (!$boardingPlace) {
@@ -97,22 +95,18 @@ if ($listingId === false || $listingId === null) {
             }
 
             if ($userId && $role === 'student') {
-                // Database query disabled for commit
                  $studentQuery = $pdo->prepare(
                     'SELECT full_name, email, phone FROM `User` WHERE user_id = ? AND role = ? LIMIT 1'
                 );
-                // Database query disabled for commit
                  $studentQuery->execute([(int) $userId, 'student']);
                 $student = $studentQuery->fetch(PDO::FETCH_ASSOC) ?: null;
                 if (!$student) {
                     $errorMessage = 'Your student account could not be verified. Please log in again.';
                 } else {
-                    // Database query disabled for commit
                      $duplicate = $pdo->prepare(
                         "SELECT COUNT(*) FROM `Inquiry` WHERE listing_id = ? AND student_user_id = ?\n"
                         . "AND status IN ('pending', 'approved', 'confirmed')"
                     );
-                    // Database query disabled for commit
                     $duplicate->execute([(int) $listingId, (int) $userId]);
                     $existingInquiry = (int) $duplicate->fetchColumn() > 0;
                 }

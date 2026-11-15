@@ -18,12 +18,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             $pdo->beginTransaction();
             // Only the authenticated owner may create a bill for an active tenancy.
-            // Database query disabled for commit
              $q = $pdo->prepare("SELECT t.tenancy_id, t.status, t.start_date, t.agreed_rent
                 FROM `Tenancy` t
                 JOIN `BoardingListing` b ON b.listing_id = t.listing_id
                 WHERE t.tenancy_id = ? AND b.owner_id = ? FOR UPDATE");
-            // Database query disabled for commit
              $q->execute([$tenancyId, $ownerId]);
             $tenancy = $q->fetch();
             if (!$tenancy || $tenancy['status'] !== 'active') {
@@ -35,11 +33,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $amountCents = rent_parse_cents($tenancy['agreed_rent']);
             if ($amountCents === 0) throw new InvalidArgumentException('The tenancy has no agreed monthly rent.');
             // The DB unique key protects against simultaneous duplicate submissions.
-            // Database query disabled for commit
              $q = $pdo->prepare("INSERT INTO `RentPayment`
                 (tenancy_id, billing_month, amount_due, amount_paid, due_date, status)
                 VALUES (?, ?, ?, 0.00, ?, 'unpaid')");
-            // Database query disabled for commit
              $q->execute([$tenancyId, $billingMonth, rent_money_from_cents($amountCents), $dueDate]);
             $pdo->commit();
             module_flash('Monthly rent bill created.');
@@ -53,13 +49,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 throw new InvalidArgumentException('Select a payment method for a recorded payment.');
             }
             $pdo->beginTransaction();
-            // Database query disabled for commit
              $q = $pdo->prepare('SELECT p.payment_id, p.amount_due, p.status
                 FROM `RentPayment` p
                 JOIN `Tenancy` t ON t.tenancy_id = p.tenancy_id
                 JOIN `BoardingListing` b ON b.listing_id = t.listing_id
                 WHERE p.payment_id = ? AND b.owner_id = ? FOR UPDATE');
-            // Database query disabled for commit
              $q->execute([$paymentId, $ownerId]);
             $payment = $q->fetch();
             if (!$payment) throw new InvalidArgumentException('Rent record not found in your listings.');
@@ -67,12 +61,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($paidCents > $dueCents) throw new InvalidArgumentException('Amount paid cannot exceed the amount due.');
             $status = $paidCents === 0 ? 'unpaid' : ($paidCents === $dueCents ? 'paid' : 'partial');
             // paid_at represents the date a month became fully paid; partial payments leave it NULL.
-            // Database query disabled for commit
              $q = $pdo->prepare("UPDATE `RentPayment`
                 SET amount_paid = ?, status = ?, payment_method = ?, reference_note = ?,
                     paid_at = CASE WHEN ? = 'paid' THEN CURRENT_TIMESTAMP ELSE NULL END
                 WHERE payment_id = ?");
-            // Database query disabled for commit
              $q->execute([
                 rent_money_from_cents($paidCents), $status, $paidCents ? $method : null,
                 $note !== '' ? $note : null, $status, $paymentId,
@@ -100,18 +92,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     module_redirect($path);
 }
 
-// Database query disabled for commit
  $q = $pdo->prepare("SELECT t.tenancy_id, t.start_date, t.agreed_rent,
     b.title AS listing_title, u.full_name AS student_name
     FROM `Tenancy` t
     JOIN `BoardingListing` b ON b.listing_id = t.listing_id
     JOIN `User` u ON u.user_id = t.student_user_id
     WHERE b.owner_id = ? AND t.status = 'active' ORDER BY t.tenancy_id DESC");
-// Database query disabled for commit
  $q->execute([$ownerId]);
 $activeTenancies = $q->fetchAll();
 
-// Database query disabled for commit
  $q = $pdo->prepare("SELECT p.payment_id, p.tenancy_id, p.billing_month, p.amount_due,
     p.amount_paid, p.due_date, p.paid_at, p.payment_method, p.status, p.reference_note,
     b.title AS listing_title, u.full_name AS student_name, t.status AS tenancy_status
@@ -120,7 +109,6 @@ $activeTenancies = $q->fetchAll();
     JOIN `BoardingListing` b ON b.listing_id = t.listing_id
     JOIN `User` u ON u.user_id = t.student_user_id
     WHERE b.owner_id = ? ORDER BY p.billing_month DESC, p.payment_id DESC");
-// Database query disabled for commit
  $q->execute([$ownerId]);
 $allBills = $q->fetchAll();
 $selectedTenancy = filter_var($_GET['tenancy_id'] ?? 0, FILTER_VALIDATE_INT) ?: 0;

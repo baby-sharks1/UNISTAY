@@ -60,28 +60,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 throw new RuntimeException('Database connection is unavailable.');
             }
 
-            // Database query disabled for commit
              $existing = $pdo->prepare('SELECT user_id FROM `User` WHERE email = ? LIMIT 1');
-            // Database query disabled for commit
              $existing->execute([$values['email']]);
             if ($existing->fetchColumn() !== false) {
                 $errorMessage = 'An account already uses this email. Please sign in instead.';
             } else {
                  //Use the SAME TiDB sequence as Google sign-in; never MAX(id) + 1.
                 // Verify its exact name with the database team before deployment.
-                // Database query disabled for commit
                 $newUserId = (int) $pdo->query('SELECT NEXTVAL(unistay_user_seq)')->fetchColumn();
                 if ($newUserId <= 0) {
                     throw new RuntimeException('Unable to generate user ID.');
                 }
 
-                // Database query disabled for commit
                  $insert = $pdo->prepare(
                     'INSERT INTO `User`
                         (user_id, full_name, email, password_hash, role, phone, status)
                      VALUES (?, ?, ?, ?, ?, ?, ?)'
                 );
-                // Database query disabled for commit
                  $insert->execute([
                     $newUserId,
                     $values['full_name'],
